@@ -5,13 +5,17 @@ from datetime import datetime
 
 EXCLUDED_NAMES = ["prompt.txt"]
 EXCLUDED_PREFIXES = ["file_list", "key", "api_key"]
+EXCLUDED_DIRS = [".git", "venv"]
 
-def should_exclude(filename):
+def should_exclude_file(filename):
     name = filename.lower()
     return (
         name in EXCLUDED_NAMES or
         any(name.startswith(prefix) for prefix in EXCLUDED_PREFIXES)
     )
+
+def should_exclude_dir(dir_name):
+    return dir_name.lower() in EXCLUDED_DIRS
 
 def detect_language(file_name):
     ext = os.path.splitext(file_name)[1].lower()
@@ -32,10 +36,10 @@ def detect_language(file_name):
         ".txt": ""
     }.get(ext, "")
 
-class FileExporterApp:
+class FileCompilerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Fancy File Exporter")
+        self.root.title("File Compiler")
         self.path_var = tk.StringVar()
         self.export_path_var = tk.StringVar()
         self.tree_items = {}      # item_id -> full path
@@ -97,7 +101,9 @@ class FileExporterApp:
         def add_to_tree(path, parent=""):
             for item in sorted(os.listdir(path)):
                 full_path = os.path.join(path, item)
-                if os.path.isfile(full_path) and should_exclude(item):
+                if os.path.isdir(full_path) and should_exclude_dir(item):
+                    continue
+                if os.path.isfile(full_path) and should_exclude_file(item):
                     continue
 
                 item_id = self.tree.insert(parent, "end", text="[✓] " + item, open=True)
@@ -237,7 +243,7 @@ class FileExporterApp:
 def run_app():
     root = tk.Tk()
     root.geometry("900x700")
-    FileExporterApp(root)
+    FileCompilerApp(root)
     root.mainloop()
 
 if __name__ == "__main__":
